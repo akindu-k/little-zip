@@ -49,9 +49,9 @@ walker game{
                 num = self.level[row][col];
 
                 if (num != 0){
-                    # text = self.font.render(str(num), True, self.text_color);
-                    # text_rect = text.get_rect(center=(x + self.cell_size/2, y + self.cell_size/2));
-                    # self.screen.blit(text, text_rect);
+                    text = self.font.render(str(num), True, self.text_color);
+                    text_rect = text.get_rect(center=(x + self.cell_size/2, y + self.cell_size/2));
+                    self.screen.blit(text, text_rect);
                 }
             }
         }
@@ -75,7 +75,8 @@ walker game{
         
         self.screen = pygame.display.set_mode((500, 500));
         self.clock = pygame.time.Clock();
-        # self.font = pygame.font.SysFont(None, 40,False,False);
+        self.font = pygame.font.Font(None, 32);
+        # self.fnt: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
         running = True;
 
         for i in range(self.rows){
@@ -97,10 +98,18 @@ walker game{
                     col = mx // self.cell_size;
                     row = my // self.cell_size;
 
-                    if (not self.path_active){
-                        if (0 <= col < self.cols and 0 <= row < self.rows and self.level[row][col] == 1){
+                    if (0 <= col < self.cols and 0 <= row < self.rows){
+                        # Check if this is the starting cell (value 1) and path is empty
+                        if (len(self.path_cells) == 0){
+                            if (self.level[row][col] == 1){
+                                self.path_cells.append((col, row));
+                                self.visited[row][col] = True;
+                                self.path_active = True;
+                            }
+                        }
+                        # Handle subsequent cells if path has started and is active
+                        elif (self.path_active and len(self.path_cells) > 0){
                             (last_col, last_row) = self.path_cells[-1];
-
 
                             if ((col, row) != (last_col, last_row)){
                                 col_diff = int(col - last_col);
@@ -117,9 +126,9 @@ walker game{
                                             if (cell_val == self.next_number){
                                                 self.next_number += 1;
                                             }
-                                            else{
-                                                self.error_cells.append((col, row));
-                                            }
+                                        }
+                                        else{
+                                            self.error_cells.append((col, row));
                                         }
                                     }
                                     else{
