@@ -1,6 +1,10 @@
 import pygame;
 import sys;
 
+import custom_sysfont;
+
+glob GENERAL_FONT = '8bitoperator_jve.ttf';
+
 walker game{
     has cell_size:int = 100;
     has cols:int = 5;
@@ -71,11 +75,11 @@ walker game{
 
     can start with `root entry{
         pygame.init("little zip");
-        # pygame.font.init("little zip"); 
+        self.font = custom_sysfont.SysFont("8bitoperator_jve", 32);
         
         self.screen = pygame.display.set_mode((500, 500));
         self.clock = pygame.time.Clock();
-        self.font = pygame.font.Font(None, 32);
+        # self.font = pygame.font.SysFont(GENERAL_FONT, 32);
         # self.fnt: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
         running = True;
 
