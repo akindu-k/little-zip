@@ -1,7 +1,14 @@
 import pygame;
 import sys;
 
+import custom_sysfont;
+
+glob GENERAL_FONT = '8bitoperator_jve.ttf';
+
+
 walker game{
+
+    has game_state:str = "welcome";
     has cell_size:int = 100;
     has cols:int = 5;
     has rows:int = 5;
@@ -25,7 +32,45 @@ walker game{
     has grid_color:tuple[int, int, int] = (0,0,0);
     has path_color:tuple[int, int, int] = (0,200,0);
     has error_color:tuple[int, int, int] = (200,0,0);
-    has text_color:tuple[int, int, int] = (0,0,0);
+    has text_color:tuple[int, int, int] = (200,0,0);
+
+    def draw_welcome_screen(){
+        self.screen.fill(self.bg_color);
+        
+        # Title
+        title_text = self.font.render("LITTLE ZIP", True, self.text_color);
+        title_rect = title_text.get_rect(center=(250, 80));
+        self.screen.blit(title_text, title_rect);
+        
+        # Instructions
+        instructions = [
+            "HOW TO PLAY:",
+            "",
+            "1. Click on cell '1' to start",
+            "2. Draw path through numbers 2-10",
+            "3. Fill all empty squares",
+            "4. Only move horizontally/vertically",
+            "5. Can't revisit squares",
+            "",
+            "CONTROLS:",
+            "- Mouse: Draw path",
+            "- R: Reset game",
+            "",
+            "PRESS SPACE TO START"
+        ];
+        
+        y_offset = 140;
+        for instruction in instructions{
+            if instruction == ""{
+                y_offset += 20;
+                continue;
+            }
+            text = self.small_font.render(instruction, True, self.text_color);
+            text_rect = text.get_rect(center=(250, y_offset));
+            self.screen.blit(text, text_rect);
+            y_offset += 25;
+        }
+    }
     
 
     def draw_grid(){
@@ -69,89 +114,203 @@ walker game{
         }
     }
 
-    can start with `root entry{
-        pygame.init("little zip");
-        # pygame.font.init("little zip"); 
+    def draw_msg(msg:str){
+        text = self.font.render(msg, True, self.text_color);
+
+        # Calculate center of screen using same structure you used earlier
+        cx = 250;
+        cy = 250;
+
+        text_rect = text.get_rect(center=(cx, cy));
+        self.screen.blit(text, text_rect);
+    }
+
+    def all_squares_filled() -> bool{
+        for row in range(self.rows){
+            for col in range(self.cols){
+                if (not self.visited[row][col]){
+                    return False;
+                }
+            }
+        }
+        print("All squares filled");
+        return True;
+    }
+
+    def reset_game(){
         
+        self.path_cells.clear();
+        self.error_cells.clear();
+        self.path_active = False;
+        self.next_number = 2;
+        self.game_completed = False;
+        
+        
+        for i in range(self.rows){
+            for j in range(self.cols){
+                self.visited[i][j] = False;
+            }
+        }
+    }
+
+
+
+    can start with `root entry
+    {
+        pygame.init("little zip");
+        self.font = custom_sysfont.SysFont("8bitoperator_jve", 32);
+        self.small_font = custom_sysfont.SysFont("8bitoperator_jve", 18);
         self.screen = pygame.display.set_mode((500, 500));
         self.clock = pygame.time.Clock();
-        self.font = pygame.font.Font(None, 32);
-        # self.fnt: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
+        self.game_completed = False;
         running = True;
 
         for i in range(self.rows){
-        row_list = [];
-        for j in range(self.cols){
-            row_list.append(False);
-        }
-        self.visited.append(row_list);
+            row_list = [];
+            for j in range(self.cols){
+                row_list.append(False);
+            }
+            self.visited.append(row_list);
         }
 
-        while (running){
-            for event in pygame.event.get(){
-                if (event.type == pygame.QUIT){
+        while (running)
+        {
+            for event in pygame.event.get()
+            {
+                if (event.type == pygame.QUIT)
+                {
                     running = False;
                 }
+                
+                elif (event.type == pygame.KEYDOWN)
+                {
+                    if (event.key == pygame.K_SPACE and self.game_state == "welcome")
+                    {
+                        self.game_state = "playing";
+                    }
+                    elif (event.key == pygame.K_r)
+                    {
+                        if (self.game_state == "playing" or self.game_state == "completed")
+                        {
+                            self.reset_game();
+                            self.game_state = "playing";
+                        }
+                    }
+                    elif (event.key == pygame.K_ESCAPE)
+                    {
+                        self.game_state = "welcome";
+                        self.reset_game();
+                    }
+                }
 
-                elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1){
+                elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.game_state == "playing")
+                {
                     (mx, my) = pygame.mouse.get_pos();
                     col = mx // self.cell_size;
                     row = my // self.cell_size;
 
-                    if (0 <= col < self.cols and 0 <= row < self.rows){
-                        # Check if this is the starting cell (value 1) and path is empty
-                        if (len(self.path_cells) == 0){
-                            if (self.level[row][col] == 1){
-                                self.path_cells.append((col, row));
-                                self.visited[row][col] = True;
-                                self.path_active = True;
-                            }
-                        }
-                        # Handle subsequent cells if path has started and is active
-                        elif (self.path_active and len(self.path_cells) > 0){
-                            (last_col, last_row) = self.path_cells[-1];
-
-                            if ((col, row) != (last_col, last_row)){
-                                col_diff = int(col - last_col);
-                                row_diff = int(row - last_row);
-
-                                abs_col_diff = col_diff if col_diff >= 0 else -col_diff;
-                                abs_row_diff = row_diff if row_diff >= 0 else -row_diff;  
-                                if ((abs_col_diff + abs_row_diff) == 1){
-                                    if (not self.visited[row][col]){
-                                        cell_val = self.level[row][col];
-                                        if (cell_val == 0 or cell_val == self.next_number){
-                                            self.path_cells.append((col, row));
-                                            self.visited[row][col] = True;
-                                            if (cell_val == self.next_number){
-                                                self.next_number += 1;
-                                            }
-                                        }
-                                        else{
-                                            self.error_cells.append((col, row));
-                                        }
-                                    }
-                                    else{
-                                        self.error_cells.append((col, row));
-                                    }
-                                }else{
-                                    self.error_cells.append((col, row));
-                                }
-                            }
+                    if (not self.path_active)
+                    {
+                        if (0 <= col < self.cols and 0 <= row < self.rows and self.level[row][col] == 1)
+                        {
+                            self.path_cells = [(col, row)];
+                            self.visited[row][col] = True;      
+                            self.path_active = True;
+                            self.next_number = 2;
+                            self.error_cells.clear();
                         }
                     }
                 }
-                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1){
+                elif (event.type == pygame.MOUSEMOTION and self.path_active and self.game_state == "playing")
+                {
+                    (mx,my) = pygame.mouse.get_pos();
+                    col = mx // self.cell_size;
+                    row = my // self.cell_size;
+                    if (0 <= col < self.cols and 0 <= row < self.rows)
+                    {
+                        (last_col, last_row) = self.path_cells[-1];
+                        if ((col,row) != (last_col, last_row))
+                        {
+                            col_diff = int(col - last_col);
+                            row_diff = int(row - last_row);
+                            abs_col_diff = col_diff if col_diff >= 0 else -col_diff;
+                            abs_row_diff = row_diff if row_diff >= 0 else -row_diff; 
+                            if ((abs_col_diff + abs_row_diff) == 1)
+                            {
+                                if (not self.visited[row][col])
+                                {
+                                    cell_val = self.level[row][col];
+                                    if ((cell_val == 0) or (cell_val == self.next_number))
+                                    {
+                                        self.path_cells.append((col, row));
+                                        self.visited[row][col] = True;
+                                        if (cell_val == self.next_number)
+                                        {
+                                            self.next_number += 1;
+                                            print(self.next_number);
+
+                                            if (self.next_number == 11)
+                                            {
+                                                self.game_completed = True;
+                                                self.path_active = False;
+                                                self.game_state = "completed";
+                                            }
+                                        }
+                                                                                      
+                                    }
+                                    else
+                                    {
+                                        self.error_cells.append((col, row));
+                                    }
+                                }
+                                else
+                                {
+                                    self.error_cells.append((col, row));
+                                }
+                            }
+                            else
+                            {
+                                self.error_cells.append((col, row));
+                            }
+                            }
+                        }
+                }
+                
+                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.game_state == "playing")
+                {
                     self.path_active = False;
                 }
             }
-            self.draw_grid();
-            self.draw_path();
+
+            if (self.game_state == "welcome")
+            {
+                self.draw_welcome_screen();
+            }
+            elif (self.game_state == "playing")
+            {
+                self.draw_grid();
+                self.draw_path();
+            }
+            elif (self.game_state == "completed")
+            {
+                if (not self.all_squares_filled())
+                {
+                    self.screen.fill(self.bg_color);
+                    self.draw_msg("Fill all squares!");
+                }
+                else
+                {
+                    self.screen.fill(self.bg_color);
+                    self.draw_msg("Congratulations!");
+                }
+            }
+
             pygame.display.flip();
+            
             self.clock.tick(30);
         }
-        pygame.quit();
-        sys.exit();
+    pygame.quit();
+    sys.exit();
 
     }
 }
