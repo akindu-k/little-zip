@@ -12,7 +12,7 @@ walker game{
 
 
     has level:List[List[int]] = [
-        [ 1,  0,  0,  0,  7],
+        [ 0,  1,  0,  0,  7],
         [ 0,  0,  0,  6,  0],
         [ 0,  3,  4,  0,  8],
         [ 2,  0,  0,  0,  9],
@@ -29,7 +29,7 @@ walker game{
     has grid_color:tuple[int, int, int] = (0,0,0);
     has path_color:tuple[int, int, int] = (0,200,0);
     has error_color:tuple[int, int, int] = (200,0,0);
-    has text_color:tuple[int, int, int] = (0,0,0);
+    has text_color:tuple[int, int, int] = (200,0,0);
     
 
     def draw_grid(){
@@ -73,7 +73,8 @@ walker game{
         }
     }
 
-    can start with `root entry{
+    can start with `root entry
+    {
         pygame.init("little zip");
         self.font = custom_sysfont.SysFont("8bitoperator_jve", 32);
         
@@ -84,68 +85,89 @@ walker game{
         running = True;
 
         for i in range(self.rows){
-        row_list = [];
-        for j in range(self.cols){
-            row_list.append(False);
-        }
-        self.visited.append(row_list);
+            row_list = [];
+            for j in range(self.cols){
+                row_list.append(False);
+            }
+            self.visited.append(row_list);
         }
 
-        while (running){
-            for event in pygame.event.get(){
-                if (event.type == pygame.QUIT){
+        while (running)
+        {
+            for event in pygame.event.get()
+            {
+                if (event.type == pygame.QUIT)
+                {
                     running = False;
                 }
 
-                elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1){
+                elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
+                {
                     (mx, my) = pygame.mouse.get_pos();
                     col = mx // self.cell_size;
                     row = my // self.cell_size;
 
-                    if (0 <= col < self.cols and 0 <= row < self.rows){
-                        # Check if this is the starting cell (value 1) and path is empty
-                        if (len(self.path_cells) == 0){
-                            if (self.level[row][col] == 1){
-                                self.path_cells.append((col, row));
-                                self.visited[row][col] = True;
-                                self.path_active = True;
-                            }
-                        }
-                        # Handle subsequent cells if path has started and is active
-                        elif (self.path_active and len(self.path_cells) > 0){
-                            (last_col, last_row) = self.path_cells[-1];
-
-                            if ((col, row) != (last_col, last_row)){
-                                col_diff = int(col - last_col);
-                                row_diff = int(row - last_row);
-
-                                abs_col_diff = col_diff if col_diff >= 0 else -col_diff;
-                                abs_row_diff = row_diff if row_diff >= 0 else -row_diff;  
-                                if ((abs_col_diff + abs_row_diff) == 1){
-                                    if (not self.visited[row][col]){
-                                        cell_val = self.level[row][col];
-                                        if (cell_val == 0 or cell_val == self.next_number){
-                                            self.path_cells.append((col, row));
-                                            self.visited[row][col] = True;
-                                            if (cell_val == self.next_number){
-                                                self.next_number += 1;
-                                            }
-                                        }
-                                        else{
-                                            self.error_cells.append((col, row));
-                                        }
-                                    }
-                                    else{
-                                        self.error_cells.append((col, row));
-                                    }
-                                }else{
-                                    self.error_cells.append((col, row));
-                                }
-                            }
+                    if (not self.path_active)
+                    {
+                        if (0 <= col < self.cols and 0 <= row < self.rows and self.level[row][col] == 1)
+                        {
+                            self.path_cells = [(col, row)];
+                            self.visited[row][col] = True;      
+                            self.path_active = True;
+                            self.next_number = 2;
+                            self.error_cells.clear();
                         }
                     }
                 }
-                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1){
+                elif (event.type == pygame.MOUSEMOTION and self.path_active)
+                {
+                    (mx,my) = pygame.mouse.get_pos();
+                    col = mx // self.cell_size;
+                    row = my // self.cell_size;
+                    if (0 <= col < self.cols and 0 <= row < self.rows)
+                    {
+                        (last_col, last_row) = self.path_cells[-1];
+                        if ((col,row) != (last_col, last_row))
+                        {
+                            col_diff = int(col - last_col);
+                            row_diff = int(row - last_row);
+                            abs_col_diff = col_diff if col_diff >= 0 else -col_diff;
+                            abs_row_diff = row_diff if row_diff >= 0 else -row_diff; 
+                            if ((abs_col_diff + abs_row_diff) == 1)
+                            {
+                                if (not self.visited[row][col])
+                                {
+                                    cell_val = self.level[row][col];
+                                    if ((cell_val == 0) or (cell_val == self.next_number))
+                                    {
+                                        self.path_cells.append((col, row));
+                                        self.visited[row][col] = True;
+                                        if (cell_val == self.next_number)
+                                        {
+                                            self.next_number += 1;
+                                        }
+                                                                                      
+                                    }
+                                    else
+                                    {
+                                        self.error_cells.append((col, row));
+                                    }
+                                }
+                                else
+                                {
+                                    self.error_cells.append((col, row));
+                                }
+                            }
+                            else
+                            {
+                                self.error_cells.append((col, row));
+                            }
+                            }
+                        }
+                }
+                
+                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1)
+                {
                     self.path_active = False;
                 }
             }
@@ -154,8 +176,8 @@ walker game{
             pygame.display.flip();
             self.clock.tick(30);
         }
-        pygame.quit();
-        sys.exit();
+    pygame.quit();
+    sys.exit();
 
     }
 }
