@@ -1,9 +1,13 @@
 import pygame;
 import sys;
-
 import custom_sysfont;
 
+import from byllm.lib{Model}
+
 glob GENERAL_FONT = '8bitoperator_jve.ttf';
+glob llm = Model(model_name="gemini/gemini-2.0-flash");
+
+
 
 
 walker game{
@@ -26,6 +30,7 @@ walker game{
     has path_cells:List[Tuple[int, int]] = [];
     has error_cells:List[Tuple[int, int]] = [];  
     has path_active:bool = False;  
+    has drawing:bool = False;
     has next_number:int = 2;
 
     has bg_color:tuple[int, int, int] = (255,255,255);
@@ -33,6 +38,34 @@ walker game{
     has path_color:tuple[int, int, int] = (0,200,0);
     has error_color:tuple[int, int, int] = (200,0,0);
     has text_color:tuple[int, int, int] = (200,0,0);
+
+        """
+        Generates a solvable Hamiltonian path puzzle using AI.
+        
+        This creates a 5x5 grid puzzle that is fundamentally a Hamiltonian path problem:
+        - A Hamiltonian path must visit every cell in the grid exactly once
+        - Numbers 1-10 are randomly placed as waypoints that must be visited in sequential order
+        - Empty cells (0) represent intermediate nodes in the path
+        - The path must connect all numbered cells (1→2→3→...→10) while filling all empty squares
+        - Movement is restricted to horizontal/vertical only (4-connected grid graph)
+        
+        The AI ensures that:
+        1. A valid Hamiltonian path exists from cell 1 to cell 10
+        2. The path visits all 25 cells exactly once
+        3. All numbered waypoints can be reached in the correct sequence
+        4. The puzzle has exactly one valid solution
+        
+        Returns:
+            str: A string representation of a 5x5 grid with newline separators
+                Format: "1, 0, 0, 0, 7\n0, 0, 0, 6, 0\n0, 3, 4, 0, 8\n2, 0, 0, 0, 9\n0, 0, 0, 5, 10"
+                
+        Mathematical properties:
+            - Graph: 5x5 grid (25 vertices, 4-connected)
+            - Problem: Hamiltonian path with ordered waypoint constraints
+            - Constraint: Path must visit numbered cells in ascending order
+            - Guarantee: Exactly one valid solution exists
+        """
+    # def level_generator() -> str by llm();
 
     def draw_welcome_screen(){
         self.screen.fill(self.bg_color);
@@ -117,7 +150,6 @@ walker game{
     def draw_msg(msg:str){
         text = self.font.render(msg, True, self.text_color);
 
-        # Calculate center of screen using same structure you used earlier
         cx = 250;
         cy = 250;
 
@@ -142,6 +174,7 @@ walker game{
         self.path_cells.clear();
         self.error_cells.clear();
         self.path_active = False;
+        self.drawing = False;
         self.next_number = 2;
         self.game_completed = False;
         
@@ -164,6 +197,9 @@ walker game{
         self.clock = pygame.time.Clock();
         self.game_completed = False;
         running = True;
+
+        # self.level = self.level_generator();
+        # print("Generated Level:",self.level_generator());
 
         for i in range(self.rows){
             row_list = [];
@@ -216,8 +252,20 @@ walker game{
                             self.path_cells = [(col, row)];
                             self.visited[row][col] = True;      
                             self.path_active = True;
+                            self.drawing = True;
                             self.next_number = 2;
                             self.error_cells.clear();
+                        }
+                    }
+                    else
+                    {
+                        if (len(self.path_cells) > 0)
+                        {
+                            (last_col, last_row) = self.path_cells[-1];
+                            if (0 <= col < self.cols and 0 <= row < self.rows and col == last_col and row == last_row)
+                            {
+                                self.drawing = True;
+                            }
                         }
                     }
                 }
@@ -278,7 +326,7 @@ walker game{
                 
                 elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.game_state == "playing")
                 {
-                    self.path_active = False;
+                    self.drawing = False;
                 }
             }
 
