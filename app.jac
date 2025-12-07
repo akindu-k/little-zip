@@ -26,6 +26,7 @@ walker game{
     has path_cells:List[Tuple[int, int]] = [];
     has error_cells:List[Tuple[int, int]] = [];  
     has path_active:bool = False;  
+    has drawing:bool = False;
     has next_number:int = 2;
 
     has bg_color:tuple[int, int, int] = (255,255,255);
@@ -142,6 +143,7 @@ walker game{
         self.path_cells.clear();
         self.error_cells.clear();
         self.path_active = False;
+        self.drawing = False;
         self.next_number = 2;
         self.game_completed = False;
         
@@ -216,8 +218,20 @@ walker game{
                             self.path_cells = [(col, row)];
                             self.visited[row][col] = True;      
                             self.path_active = True;
+                            self.drawing = True;
                             self.next_number = 2;
                             self.error_cells.clear();
+                        }
+                    }
+                    else
+                    {
+                        if (len(self.path_cells) > 0)
+                        {
+                            (last_col, last_row) = self.path_cells[-1];
+                            if (0 <= col < self.cols and 0 <= row < self.rows and col == last_col and row == last_row)
+                            {
+                                self.drawing = True;
+                            }
                         }
                     }
                 }
@@ -278,7 +292,7 @@ walker game{
                 
                 elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.game_state == "playing")
                 {
-                    self.path_active = False;
+                    self.drawing = False;
                 }
             }
 
