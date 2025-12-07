@@ -5,7 +5,10 @@ import custom_sysfont;
 
 glob GENERAL_FONT = '8bitoperator_jve.ttf';
 
+
 walker game{
+
+    has game_state:str = "welcome";
     has cell_size:int = 100;
     has cols:int = 5;
     has rows:int = 5;
@@ -30,6 +33,44 @@ walker game{
     has path_color:tuple[int, int, int] = (0,200,0);
     has error_color:tuple[int, int, int] = (200,0,0);
     has text_color:tuple[int, int, int] = (200,0,0);
+
+    def draw_welcome_screen(){
+        self.screen.fill(self.bg_color);
+        
+        # Title
+        title_text = self.font.render("LITTLE ZIP", True, self.text_color);
+        title_rect = title_text.get_rect(center=(250, 80));
+        self.screen.blit(title_text, title_rect);
+        
+        # Instructions
+        instructions = [
+            "HOW TO PLAY:",
+            "",
+            "1. Click on cell '1' to start",
+            "2. Draw path through numbers 2-10",
+            "3. Fill all empty squares",
+            "4. Only move horizontally/vertically",
+            "5. Can't revisit squares",
+            "",
+            "CONTROLS:",
+            "- Mouse: Draw path",
+            "- R: Reset game",
+            "",
+            "PRESS SPACE TO START"
+        ];
+        
+        y_offset = 140;
+        for instruction in instructions{
+            if instruction == ""{
+                y_offset += 20;
+                continue;
+            }
+            text = self.small_font.render(instruction, True, self.text_color);
+            text_rect = text.get_rect(center=(250, y_offset));
+            self.screen.blit(text, text_rect);
+            y_offset += 25;
+        }
+    }
     
 
     def draw_grid(){
@@ -96,13 +137,29 @@ walker game{
         return True;
     }
 
+    def reset_game(){
+        
+        self.path_cells.clear();
+        self.error_cells.clear();
+        self.path_active = False;
+        self.next_number = 2;
+        self.game_completed = False;
+        
+        
+        for i in range(self.rows){
+            for j in range(self.cols){
+                self.visited[i][j] = False;
+            }
+        }
+    }
+
 
 
     can start with `root entry
     {
         pygame.init("little zip");
         self.font = custom_sysfont.SysFont("8bitoperator_jve", 32);
-        
+        self.small_font = custom_sysfont.SysFont("8bitoperator_jve", 18);
         self.screen = pygame.display.set_mode((500, 500));
         self.clock = pygame.time.Clock();
         self.game_completed = False;
@@ -124,8 +181,29 @@ walker game{
                 {
                     running = False;
                 }
+                
+                elif (event.type == pygame.KEYDOWN)
+                {
+                    if (event.key == pygame.K_SPACE and self.game_state == "welcome")
+                    {
+                        self.game_state = "playing";
+                    }
+                    elif (event.key == pygame.K_r)
+                    {
+                        if (self.game_state == "playing" or self.game_state == "completed")
+                        {
+                            self.reset_game();
+                            self.game_state = "playing";
+                        }
+                    }
+                    elif (event.key == pygame.K_ESCAPE)
+                    {
+                        self.game_state = "welcome";
+                        self.reset_game();
+                    }
+                }
 
-                elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
+                elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.game_state == "playing")
                 {
                     (mx, my) = pygame.mouse.get_pos();
                     col = mx // self.cell_size;
@@ -143,7 +221,7 @@ walker game{
                         }
                     }
                 }
-                elif (event.type == pygame.MOUSEMOTION and self.path_active)
+                elif (event.type == pygame.MOUSEMOTION and self.path_active and self.game_state == "playing")
                 {
                     (mx,my) = pygame.mouse.get_pos();
                     col = mx // self.cell_size;
@@ -175,6 +253,7 @@ walker game{
                                             {
                                                 self.game_completed = True;
                                                 self.path_active = False;
+                                                self.game_state = "completed";
                                             }
                                         }
                                                                                       
@@ -197,29 +276,35 @@ walker game{
                         }
                 }
                 
-                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1)
+                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.game_state == "playing")
                 {
                     self.path_active = False;
                 }
             }
-            self.draw_grid();
-            self.draw_path();
 
-            if (self.game_completed)
+            if (self.game_state == "welcome")
+            {
+                self.draw_welcome_screen();
+            }
+            elif (self.game_state == "playing")
+            {
+                self.draw_grid();
+                self.draw_path();
+            }
+            elif (self.game_state == "completed")
             {
                 if (not self.all_squares_filled())
                 {
                     self.screen.fill(self.bg_color);
                     self.draw_msg("Fill all squares!");
-                    # self.game_completed = False;
                 }
                 else
                 {
                     self.screen.fill(self.bg_color);
                     self.draw_msg("Congratulations!");
                 }
-                
             }
+
             pygame.display.flip();
             
             self.clock.tick(30);
