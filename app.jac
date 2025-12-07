@@ -12,7 +12,7 @@ walker game{
 
 
     has level:List[List[int]] = [
-        [ 0,  1,  0,  0,  7],
+        [ 1,  0,  0,  0,  7],
         [ 0,  0,  0,  6,  0],
         [ 0,  3,  4,  0,  8],
         [ 2,  0,  0,  0,  9],
@@ -73,6 +73,31 @@ walker game{
         }
     }
 
+    def draw_msg(msg:str){
+        text = self.font.render(msg, True, self.text_color);
+
+        # Calculate center of screen using same structure you used earlier
+        cx = 250;
+        cy = 250;
+
+        text_rect = text.get_rect(center=(cx, cy));
+        self.screen.blit(text, text_rect);
+    }
+
+    def all_squares_filled() -> bool{
+        for row in range(self.rows){
+            for col in range(self.cols){
+                if (not self.visited[row][col]){
+                    return False;
+                }
+            }
+        }
+        print("All squares filled");
+        return True;
+    }
+
+
+
     can start with `root entry
     {
         pygame.init("little zip");
@@ -80,8 +105,7 @@ walker game{
         
         self.screen = pygame.display.set_mode((500, 500));
         self.clock = pygame.time.Clock();
-        # self.font = pygame.font.SysFont(GENERAL_FONT, 32);
-        # self.fnt: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
+        self.game_completed = False;
         running = True;
 
         for i in range(self.rows){
@@ -145,6 +169,13 @@ walker game{
                                         if (cell_val == self.next_number)
                                         {
                                             self.next_number += 1;
+                                            print(self.next_number);
+
+                                            if (self.next_number == 11)
+                                            {
+                                                self.game_completed = True;
+                                                self.path_active = False;
+                                            }
                                         }
                                                                                       
                                     }
@@ -173,7 +204,24 @@ walker game{
             }
             self.draw_grid();
             self.draw_path();
+
+            if (self.game_completed)
+            {
+                if (not self.all_squares_filled())
+                {
+                    self.screen.fill(self.bg_color);
+                    self.draw_msg("Fill all squares!");
+                    # self.game_completed = False;
+                }
+                else
+                {
+                    self.screen.fill(self.bg_color);
+                    self.draw_msg("Congratulations!");
+                }
+                
+            }
             pygame.display.flip();
+            
             self.clock.tick(30);
         }
     pygame.quit();
