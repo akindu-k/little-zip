@@ -65,7 +65,7 @@ walker game{
             - Constraint: Path must visit numbered cells in ascending order
             - Guarantee: Exactly one valid solution exists
         """
-    def level_generator() -> str by llm();
+    # def level_generator() -> str by llm();
 
     def draw_welcome_screen(){
         self.screen.fill(self.bg_color);
@@ -199,7 +199,7 @@ walker game{
         running = True;
 
         # self.level = self.level_generator();
-        print("Generated Level:",self.level_generator());
+        # print("Generated Level:",self.level_generator());
 
         for i in range(self.rows){
             row_list = [];
