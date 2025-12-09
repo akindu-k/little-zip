@@ -5,10 +5,7 @@ import custom_sysfont;
 import from byllm.lib{Model}
 
 glob GENERAL_FONT = '8bitoperator_jve.ttf';
-glob llm = Model(model_name="gemini/gemini-2.0-flash");
-
-
-
+glob llm = Model(model_name="gpt-4o-mini");
 
 walker game{
 
@@ -18,14 +15,7 @@ walker game{
     has rows:int = 5;
 
 
-    has level:List[List[int]] = [
-        [ 1,  0,  0,  0,  7],
-        [ 0,  0,  0,  6,  0],
-        [ 0,  3,  4,  0,  8],
-        [ 2,  0,  0,  0,  9],
-        [ 0,  0,  0,  5, 10]
-    ];
-
+    has level:List[List[int]] = [];
     has visited:List[List[bool]] = [];
     has path_cells:List[Tuple[int, int]] = [];
     has error_cells:List[Tuple[int, int]] = [];  
@@ -39,33 +29,45 @@ walker game{
     has error_color:tuple[int, int, int] = (200,0,0);
     has text_color:tuple[int, int, int] = (200,0,0);
 
-        """
-        Generates a solvable Hamiltonian path puzzle using AI.
-        
-        This creates a 5x5 grid puzzle that is fundamentally a Hamiltonian path problem:
-        - A Hamiltonian path must visit every cell in the grid exactly once
-        - Numbers 1-10 are randomly placed as waypoints that must be visited in sequential order
-        - Empty cells (0) represent intermediate nodes in the path
-        - The path must connect all numbered cells (1→2→3→...→10) while filling all empty squares
-        - Movement is restricted to horizontal/vertical only (4-connected grid graph)
-        
-        The AI ensures that:
-        1. A valid Hamiltonian path exists from cell 1 to cell 10
-        2. The path visits all 25 cells exactly once
-        3. All numbered waypoints can be reached in the correct sequence
-        4. The puzzle has exactly one valid solution
-        
-        Returns:
-            str: A string representation of a 5x5 grid with newline separators
-                Format: "1, 0, 0, 0, 7\n0, 0, 0, 6, 0\n0, 3, 4, 0, 8\n2, 0, 0, 0, 9\n0, 0, 0, 5, 10"
-                
-        Mathematical properties:
-            - Graph: 5x5 grid (25 vertices, 4-connected)
-            - Problem: Hamiltonian path with ordered waypoint constraints
-            - Constraint: Path must visit numbered cells in ascending order
-            - Guarantee: Exactly one valid solution exists
-        """
-    # def level_generator() -> str by llm();
+    """
+    Generates a solvable Hamiltonian path puzzle using AI.
+    
+    This creates a 5x5 grid puzzle that is fundamentally a Hamiltonian path problem:
+    - A Hamiltonian path must visit every cell in the grid exactly once
+    - Numbers 1-10 are randomly placed as waypoints that must be visited in sequential order
+    - Empty cells (0) represent intermediate nodes in the path
+    - The path must connect all numbered cells (1→2→3→...→10) while filling all empty squares
+    - Movement is restricted to horizontal/vertical only (4-connected grid graph)
+    
+    The AI must ensure that:
+    1. A valid Hamiltonian path exists from cell 1 to cell 10
+    2. The path visits all 25 cells exactly once
+    3. All numbered waypoints can be reached in the correct sequence
+    4. The puzzle has exactly one valid solution
+    
+    Return ONLY a valid 5x5 grid as a nested list structure where:
+    - Each cell contains either 0 (empty) or numbers 1-10 (waypoints)
+    - Numbers 1-10 must be placed such that there exists a valid path connecting them sequentially
+    - The path must visit every single cell in the grid exactly once (Hamiltonian path)
+    - Only horizontal and vertical moves are allowed (no diagonal)
+    
+    Example valid output:
+    [
+        [1, 0, 0, 0, 7],
+        [0, 0, 0, 6, 0], 
+        [0, 3, 4, 0, 8],
+        [2, 0, 0, 0, 9],
+        [0, 0, 0, 5, 10]
+    ]
+    
+    Mathematical constraints:
+    - Graph: 5x5 grid (25 vertices, 4-connected)
+    - Problem: Hamiltonian path with ordered waypoint constraints
+    - Constraint: Path must visit numbered cells 1→2→3→...→10 in order
+    - Requirement: All 25 cells must be traversed exactly once
+    - Output: Return the grid as List[List[int]] - do not return as string
+    """
+    def level_generator() -> list[list[int]] by llm();
 
     def draw_welcome_screen(){
         self.screen.fill(self.bg_color);
@@ -198,8 +200,8 @@ walker game{
         self.game_completed = False;
         running = True;
 
-        # self.level = self.level_generator();
-        # print("Generated Level:",self.level_generator());
+        self.level = self.level_generator();
+        print("Generated Level:",self.level_generator());
 
         for i in range(self.rows){
             row_list = [];
